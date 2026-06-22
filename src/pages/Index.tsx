@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 
@@ -13,13 +13,68 @@ const NAV = [
   { id: 'contacts', label: 'Контакты' },
 ];
 
-const MENU = [
-  { name: 'Классика', desc: 'Курица, свежие овощи, фирменный соус', price: '290 ₽', emoji: '🌯' },
-  { name: 'Острая', desc: 'Курица, халапеньо, чили-соус', price: '320 ₽', emoji: '🌶️' },
-  { name: 'Сырная', desc: 'Курица, моцарелла, чеддер, соус ранч', price: '350 ₽', emoji: '🧀' },
-  { name: 'Говяжья', desc: 'Сочная говядина, овощи, барбекю', price: '390 ₽', emoji: '🥩' },
-  { name: 'Вегги', desc: 'Фалафель, овощи, хумус, тахини', price: '270 ₽', emoji: '🥗' },
-  { name: 'Двойная', desc: 'Двойная порция мяса для голодных', price: '430 ₽', emoji: '🔥' },
+const MENU_CATS = [
+  {
+    cat: 'Шаурма', emoji: '🌯', note: 'мясо: курица / свинина · лаваш: класс. / сыр',
+    items: [
+      { name: 'Классик', price: '290', desc: 'Курица/свинина, капуста, фирменный соус, огурцы, помидоры, картофель фри' },
+      { name: 'Грибная', price: '320', desc: 'Курица/свинина, грибы, картофель фри, помидоры, фирменный соус, грибной соус' },
+      { name: 'Овощная', price: '260', desc: 'Капуста, помидоры, огурцы, фирменный соус, картошка фри, морковь по-корейски' },
+      { name: 'Сырная', price: '330', desc: 'Курица/свинина, капуста, фирменный соус, помидор, картофель фри, сырный соус, сыр' },
+      { name: 'Азиатская', price: '320', desc: 'Курица/свинина, капуста, помидор, морковь по-корейски, ананас, соус сладкий чили, халапеньо · сырный лаваш +20₽' },
+    ],
+  },
+  {
+    cat: 'Сэндвич', emoji: '🥪', note: '',
+    items: [
+      { name: 'С курицей', price: '220', desc: 'Тостер, соус чесночный, курица, айсберг, помидор, сыр' },
+      { name: 'С беконом', price: '250', desc: 'Тостер, фирменный соус, соус BBQ, айсберг, бекон, помидор, лук красный, сыр' },
+      { name: 'С копчёной курицей', price: '250', desc: 'Тостер, соус BBQ, соус гриль, копчёная курица, айсберг, помидор, лук красный, огурцы м-с, сыр' },
+    ],
+  },
+  {
+    cat: 'Хот-дог', emoji: '🌭', note: '',
+    items: [
+      { name: 'Классик', price: '170', desc: 'Булка, соус кетчуп, сосиска свиная, соус горчичный' },
+      { name: 'Датский', price: '190', desc: 'Булка, соус кетчуп, огурец м-с, сосиска свиная, соус горчичный, маренный лук' },
+      { name: 'Нью-Йорк', price: '230', desc: 'Булка, чесночный соус, корейская морковь, сосиска свиная, бекон, жаренный лук' },
+      { name: 'Гавайский', price: '230', desc: 'Булка, помидор, соус 1000 островов, сосиска свиная, соус кисло-сладкий, ананас, айсберг' },
+    ],
+  },
+  {
+    cat: 'Ролл', emoji: '🫔', note: '',
+    items: [
+      { name: 'Цезарь', price: '250', desc: 'Наггетсы, айсберг, соус цезарь, помидор, сыр' },
+      { name: 'Шримп', price: '280', desc: 'Креветка, айсберг, соус чесночный, соус горчичный, помидор, лук, сыр' },
+      { name: 'Гриль', price: '270', desc: 'Копчёная курица, бекон, соус гриль, помидор, сыр' },
+    ],
+  },
+  {
+    cat: 'Донер', emoji: '🥙', note: 'мясо: курица / свинина',
+    items: [
+      { name: 'Донер', price: '290', desc: 'Курица/свинина, помидор, огурцы, корейская морковь, картошка фри, фирменный соус' },
+    ],
+  },
+  {
+    cat: 'Фритюр', emoji: '🍟', note: '',
+    items: [
+      { name: 'Фри 150г', price: '190', desc: '' },
+      { name: 'Деревенская 150г', price: '200', desc: '' },
+      { name: 'Сырные палочки 6/9/12 шт', price: '220 / 310 / 380', desc: '' },
+      { name: 'Наггетсы 6/9/12 шт', price: '190 / 240 / 310', desc: '' },
+      { name: 'Креветки 6/9/12 шт', price: '320 / 460 / 630', desc: '' },
+    ],
+  },
+  {
+    cat: 'Напитки', emoji: '🥤', note: '',
+    items: [
+      { name: 'Морс собственного производства 0,5', price: '100', desc: '' },
+      { name: 'Burn', price: '170', desc: '' },
+      { name: 'Кол. чай в ассор. 0,5', price: '110', desc: '' },
+      { name: 'Кофе в ассор.', price: '150', desc: '' },
+      { name: 'Лимонад «Добрый» 0,3 / 0,5 / 1', price: '90 / 110 / 130', desc: '' },
+    ],
+  },
 ];
 
 const REVIEWS = [
@@ -33,6 +88,8 @@ const REVIEWS = [
 
 const Index = () => {
   const [open, setOpen] = useState(false);
+  const [activeCat, setActiveCat] = useState(0);
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -158,22 +215,67 @@ const Index = () => {
       {/* Menu */}
       <section id="menu" className="bg-secondary py-20 md:py-28">
         <div className="container mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-10">
             <p className="text-primary font-display font-semibold uppercase tracking-widest mb-3">Меню</p>
-            <h2 className="font-display font-bold text-4xl md:text-6xl uppercase text-secondary-foreground">Выбирай свою</h2>
+            <h2 className="font-display font-bold text-4xl md:text-6xl uppercase text-secondary-foreground">ShavaVibe Menu</h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MENU.map((m) => (
-              <div key={m.name} className="group bg-card rounded-3xl p-6 hover:-translate-y-2 transition-transform duration-300 border-2 border-transparent hover:border-primary">
-                <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{m.emoji}</div>
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-display font-bold text-2xl uppercase">{m.name}</h3>
-                  <span className="font-display font-bold text-xl text-accent whitespace-nowrap">{m.price}</span>
-                </div>
-                <p className="text-muted-foreground mt-2">{m.desc}</p>
-              </div>
+
+          {/* Category tabs */}
+          <div ref={tabsRef} className="flex gap-2 overflow-x-auto pb-2 mb-8 scrollbar-none">
+            {MENU_CATS.map((c, i) => (
+              <button
+                key={c.cat}
+                onClick={() => setActiveCat(i)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-display font-bold uppercase whitespace-nowrap transition-all text-sm ${
+                  activeCat === i
+                    ? 'bg-primary text-primary-foreground scale-105'
+                    : 'bg-card text-foreground hover:bg-primary/20'
+                }`}
+              >
+                <span>{c.emoji}</span> {c.cat}
+              </button>
             ))}
           </div>
+
+          {/* Items */}
+          {MENU_CATS.map((cat, ci) => (
+            <div key={cat.cat} className={ci === activeCat ? 'block' : 'hidden'}>
+              {cat.note && (
+                <p className="text-muted-foreground text-sm mb-6 bg-card inline-block px-4 py-1.5 rounded-full">{cat.note}</p>
+              )}
+
+              {/* Допы для шаурмы */}
+              {ci === 0 && (
+                <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                  <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5">
+                    <h4 className="font-display font-bold text-lg uppercase mb-2">🔥 Допы</h4>
+                    <ul className="text-sm text-foreground/80 space-y-1">
+                      <li>Халапеньо / острый соус / морковь по-кор. — +40₽</li>
+                      <li>Сыр 40г — +60₽</li>
+                      <li>Мясо 50г — +60₽</li>
+                      <li>Лук — бесплатно</li>
+                    </ul>
+                  </div>
+                  <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5">
+                    <h4 className="font-display font-bold text-lg uppercase mb-2">🥣 Соусы — 30г / 50г</h4>
+                    <p className="text-sm text-foreground/80">Сырный · Чесночный · Кисло-сладкий · Горчичный · Кетчуп · Барбекю</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {cat.items.map((item) => (
+                  <div key={item.name} className="group bg-card rounded-3xl p-6 hover:-translate-y-1.5 transition-transform duration-300 border-2 border-transparent hover:border-primary">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="font-display font-bold text-xl uppercase leading-tight">{item.name}</h3>
+                      <span className="font-display font-bold text-lg text-accent whitespace-nowrap shrink-0">{item.price} ₽</span>
+                    </div>
+                    {item.desc && <p className="text-muted-foreground text-sm">{item.desc}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
