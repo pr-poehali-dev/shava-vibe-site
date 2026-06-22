@@ -109,8 +109,8 @@ const Index = () => {
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 bg-secondary/95 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between py-4">
-          <button onClick={() => scrollTo('hero')} className="flex items-center">
-            <img src="https://cdn.poehali.dev/projects/0b080fae-f7ae-4739-bd77-49237a66845b/bucket/9eee1822-a020-470b-915a-f49786ad92c4.jpg" alt="ShavaVibe" className="h-14 w-14 rounded-full object-cover scale-[0.92]" />
+          <button onClick={() => scrollTo('hero')} className="flex items-center gap-2 text-primary font-display text-2xl font-bold tracking-wide">
+            <span className="text-3xl">🌯</span> ШАВА ВАЙБ
           </button>
           <nav className="hidden md:flex items-center gap-8">
             {NAV.map((n) => (
@@ -482,9 +482,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-secondary border-t border-primary/20">
         <div className="container mx-auto py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src="https://cdn.poehali.dev/projects/0b080fae-f7ae-4739-bd77-49237a66845b/bucket/9eee1822-a020-470b-915a-f49786ad92c4.jpg" alt="ShavaVibe" className="h-10 w-10 rounded-full object-cover scale-[0.92]" />
-            <span className="text-secondary-foreground/70 font-display font-bold text-lg uppercase">ShavaVibe</span>
+          <div className="flex items-center gap-2 text-primary font-display text-xl font-bold">
+            <span className="text-2xl">🌯</span> ШАВА ВАЙБ
           </div>
           <p className="text-secondary-foreground/50 text-sm">© 2026 Шава Вайб · Саров · пр-т Музрукова 17/1</p>
         </div>
