@@ -89,7 +89,15 @@ const REVIEWS = [
 const Index = () => {
   const [open, setOpen] = useState(false);
   const [activeCat, setActiveCat] = useState(0);
+  const [booking, setBooking] = useState(false);
+  const [bookForm, setBookForm] = useState({ name: '', phone: '', date: '', time: '', guests: '2' });
+  const [bookSent, setBookSent] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
+
+  const handleBook = (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookSent(true);
+  };
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -147,8 +155,8 @@ const Index = () => {
               <Button onClick={() => scrollTo('menu')} size="lg" className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground rounded-full font-bold text-base">
                 Смотреть меню <Icon name="ArrowRight" size={18} />
               </Button>
-              <Button onClick={() => scrollTo('contacts')} size="lg" variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold text-base bg-transparent">
-                <Icon name="Phone" size={18} /> Позвонить
+              <Button onClick={() => setBooking(true)} size="lg" variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold text-base bg-transparent">
+                <Icon name="CalendarCheck" size={18} /> Забронировать стол
               </Button>
             </div>
           </div>
@@ -359,11 +367,16 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <a href="tel:+79503409302">
-              <Button size="lg" className="mt-8 bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground rounded-full font-bold text-base">
-                <Icon name="Phone" size={18} /> Позвонить и заказать
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="tel:+79503409302">
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground rounded-full font-bold text-base">
+                  <Icon name="Phone" size={18} /> Позвонить
+                </Button>
+              </a>
+              <Button onClick={() => setBooking(true)} size="lg" variant="outline" className="rounded-full border-secondary-foreground/30 text-secondary-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-base bg-transparent">
+                <Icon name="CalendarCheck" size={18} /> Забронировать стол
               </Button>
-            </a>
+            </div>
           </div>
           <div className="rounded-[2rem] overflow-hidden h-[340px] border-4 border-primary">
             <iframe
@@ -376,6 +389,95 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Booking Modal */}
+      {booking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => { setBooking(false); setBookSent(false); }}>
+          <div className="bg-card w-full max-w-md rounded-3xl p-8 shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-display font-bold text-2xl uppercase">Бронирование стола</h3>
+              <button onClick={() => { setBooking(false); setBookSent(false); }} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-primary/20 transition-colors">
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+
+            {bookSent ? (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">🎉</div>
+                <h4 className="font-display font-bold text-2xl uppercase mb-2">Заявка принята!</h4>
+                <p className="text-muted-foreground">Мы перезвоним вам в ближайшее время для подтверждения.</p>
+                <Button onClick={() => { setBooking(false); setBookSent(false); }} className="mt-6 bg-primary text-primary-foreground rounded-full font-bold">Отлично!</Button>
+              </div>
+            ) : (
+              <form onSubmit={handleBook} className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Ваше имя</label>
+                  <input
+                    required
+                    placeholder="Как вас зовут?"
+                    value={bookForm.name}
+                    onChange={(e) => setBookForm({ ...bookForm, name: e.target.value })}
+                    className="w-full bg-muted rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary border border-border"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Телефон</label>
+                  <input
+                    required
+                    type="tel"
+                    placeholder="+7 900 000 00 00"
+                    value={bookForm.phone}
+                    onChange={(e) => setBookForm({ ...bookForm, phone: e.target.value })}
+                    className="w-full bg-muted rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary border border-border"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Дата</label>
+                    <input
+                      required
+                      type="date"
+                      value={bookForm.date}
+                      onChange={(e) => setBookForm({ ...bookForm, date: e.target.value })}
+                      className="w-full bg-muted rounded-xl px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary border border-border"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Время</label>
+                    <select
+                      required
+                      value={bookForm.time}
+                      onChange={(e) => setBookForm({ ...bookForm, time: e.target.value })}
+                      className="w-full bg-muted rounded-xl px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary border border-border"
+                    >
+                      <option value="">— выбрать —</option>
+                      {['11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-muted-foreground mb-1.5 block">Количество гостей</label>
+                  <div className="flex gap-2">
+                    {['1','2','3','4','5','6+'].map(g => (
+                      <button
+                        key={g} type="button"
+                        onClick={() => setBookForm({ ...bookForm, guests: g })}
+                        className={`flex-1 py-2.5 rounded-xl font-display font-bold text-sm transition-all ${bookForm.guests === g ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-primary/20'}`}
+                      >{g}</button>
+                    ))}
+                  </div>
+                </div>
+                <Button type="submit" size="lg" className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground rounded-full font-bold text-base mt-2">
+                  <Icon name="CalendarCheck" size={18} /> Забронировать
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">Мы свяжемся с вами для подтверждения</p>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-secondary border-t border-primary/20">
