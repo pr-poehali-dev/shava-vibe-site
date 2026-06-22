@@ -95,9 +95,29 @@ const REVIEWS = [
 
 type CartItem = { name: string; price: number; qty: number; cat: string };
 type Screen = 'cart' | 'tips' | 'payment' | 'receipt';
+type Order = {
+  id: string;
+  table: number;
+  items: CartItem[];
+  total: number;
+  tip: number;
+  tipStaffName: string;
+  date: string;
+  status: 'active' | 'done';
+};
 
 function genOrderId() {
   return 'SV-' + Math.random().toString(36).slice(2,7).toUpperCase();
+}
+function genTable() {
+  return Math.floor(Math.random() * 12) + 1;
+}
+function loadOrders(): Order[] {
+  try { return JSON.parse(localStorage.getItem('sv_orders') || '[]'); } catch { return []; }
+}
+function saveOrder(o: Order) {
+  const all = loadOrders();
+  localStorage.setItem('sv_orders', JSON.stringify([o, ...all]));
 }
 
 const Index = () => {
@@ -127,6 +147,11 @@ const Index = () => {
   const [cardName, setCardName] = useState('');
   const [paying, setPaying] = useState(false);
   const [orderId] = useState(genOrderId);
+  const [tableNum] = useState(genTable);
+
+  // History
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [orders, setOrders] = useState<Order[]>(loadOrders);
 
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
   const totalPrice = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -152,7 +177,22 @@ const Index = () => {
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     setPaying(true);
-    setTimeout(() => { setPaying(false); setScreen('receipt'); }, 2000);
+    setTimeout(() => {
+      const newOrder: Order = {
+        id: orderId,
+        table: tableNum,
+        items: [...cart],
+        total: grandTotal,
+        tip: tipAmount,
+        tipStaffName: tipStaff ? (STAFF.find(s => s.id === tipStaff)?.name || '') : '',
+        date: new Date().toLocaleDateString('ru-RU') + ' ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        status: 'active',
+      };
+      saveOrder(newOrder);
+      setOrders(loadOrders());
+      setPaying(false);
+      setScreen('receipt');
+    }, 2000);
   };
 
   const closeAll = () => {
@@ -191,7 +231,14 @@ const Index = () => {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {orders.length > 0 && (
+              <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 bg-secondary-foreground/10 text-secondary-foreground px-4 py-2 rounded-full font-bold hover:bg-secondary-foreground/20 transition-colors border border-secondary-foreground/20">
+                <Icon name="Receipt" size={18} />
+                <span className="hidden sm:inline">Мои заказы</span>
+                <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-secondary-foreground text-secondary text-xs font-bold flex items-center justify-center">{orders.length}</span>
+              </button>
+            )}
             <button onClick={openCart} className="relative flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-bold hover:bg-accent transition-colors">
               <Icon name="ShoppingCart" size={18} />
               <span className="hidden sm:inline">Корзина</span>
@@ -691,12 +738,21 @@ const Index = () => {
             {/* Receipt screen */}
             {screen === 'receipt' && (
               <div className="flex-1 overflow-y-auto p-6 text-center">
-                <div className="text-6xl mb-4">🎉</div>
+                <div className="text-6xl mb-2">🎉</div>
                 <h3 className="font-display font-bold text-3xl uppercase mb-1">Оплачено!</h3>
-                <p className="text-muted-foreground mb-6">Стол забронирован. Покажи чек при входе.</p>
+                <p className="text-muted-foreground mb-4">Покажи чек сотруднику при входе</p>
 
-                <div className="bg-muted rounded-2xl p-5 text-left mb-6 border-2 border-dashed border-primary/40">
-                  <div className="text-center font-display font-bold text-xl mb-4 uppercase">🌯 Шава Вайб</div>
+                {/* Table highlight */}
+                <div className="bg-primary rounded-2xl p-5 mb-5 flex items-center justify-center gap-4">
+                  <div>
+                    <div className="text-primary-foreground/70 text-sm font-semibold uppercase tracking-wide">Твой стол</div>
+                    <div className="font-display font-bold text-6xl text-primary-foreground leading-none">№{tableNum}</div>
+                  </div>
+                  <div className="text-5xl">🪑</div>
+                </div>
+
+                <div className="bg-muted rounded-2xl p-5 text-left mb-4 border-2 border-dashed border-primary/40">
+                  <div className="text-center font-display font-bold text-xl mb-3 uppercase">🌯 Шава Вайб</div>
                   <div className="text-xs text-muted-foreground text-center mb-4">{receiptDate} · {orderId}</div>
                   <div className="space-y-2 mb-4">
                     {cart.map(item => (
@@ -715,17 +771,86 @@ const Index = () => {
                   <div className="border-t border-border pt-3 flex justify-between font-display font-bold text-lg">
                     <span>ИТОГО</span><span>{grandTotal} ₽</span>
                   </div>
-                  <div className="mt-4 text-center text-xs text-muted-foreground">г. Саров, пр-т Музрукова 17/1</div>
+                  <div className="mt-3 text-center text-xs text-muted-foreground">г. Саров, пр-т Музрукова 17/1</div>
                 </div>
 
-                <div className="bg-primary/10 rounded-2xl p-4 mb-6 text-sm">
-                  <Icon name="Info" size={16} className="inline mr-2 text-primary" />
-                  Стол автоматически забронирован. Ждём тебя до 22:00!
+                <div className="grid grid-cols-2 gap-3">
+                  <Button onClick={() => { closeAll(); setHistoryOpen(true); }} size="lg" variant="outline" className="rounded-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground bg-transparent">
+                    <Icon name="Receipt" size={18} /> Мои заказы
+                  </Button>
+                  <Button onClick={closeAll} size="lg" className="rounded-full bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground font-bold">
+                    До встречи! 👋
+                  </Button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-                <Button onClick={closeAll} size="lg" className="w-full bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground rounded-full font-bold">
-                  Отлично, до встречи! 👋
-                </Button>
+      {/* History Modal */}
+      {historyOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setHistoryOpen(false)}>
+          <div className="bg-card w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-display font-bold text-2xl uppercase">🧾 Мои заказы</h3>
+              <button onClick={() => setHistoryOpen(false)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-primary/20 transition-colors">
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {orders.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="text-5xl mb-3">📭</div>
+                  <p>Заказов пока нет</p>
+                </div>
+              ) : orders.map(o => (
+                <div key={o.id} className="bg-muted rounded-2xl overflow-hidden border-2 border-border">
+                  {/* Order header */}
+                  <div className="bg-primary px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-primary-foreground font-display font-bold text-lg">Стол №{o.table}</div>
+                      <div className="text-primary-foreground/70 text-xs">{o.date} · {o.id}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-primary-foreground font-display font-bold text-xl">{o.total} ₽</div>
+                      <div className="flex items-center gap-1 justify-end">
+                        <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+                        <span className="text-primary-foreground/80 text-xs">Оплачено</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Items */}
+                  <div className="px-5 py-4 space-y-1.5">
+                    {o.items.map(item => (
+                      <div key={item.name} className="flex justify-between text-sm">
+                        <span className="text-foreground">{item.name} × {item.qty}</span>
+                        <span className="font-bold">{item.price * item.qty} ₽</span>
+                      </div>
+                    ))}
+                    {o.tip > 0 && o.tipStaffName && (
+                      <div className="flex justify-between text-sm text-muted-foreground pt-1 border-t border-border">
+                        <span>Чаевые ({o.tipStaffName})</span>
+                        <span>{o.tip} ₽</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Show receipt hint */}
+                  <div className="bg-primary/10 px-5 py-3 flex items-center gap-2 text-sm text-primary font-semibold">
+                    <Icon name="Smartphone" size={16} />
+                    Покажи этот экран сотруднику при получении
+                  </div>
+                </div>
+              ))}
+            </div>
+            {orders.length > 0 && (
+              <div className="p-4 border-t border-border">
+                <button
+                  onClick={() => { localStorage.removeItem('sv_orders'); setOrders([]); }}
+                  className="w-full text-center text-sm text-muted-foreground hover:text-destructive transition-colors py-2"
+                >
+                  Очистить историю
+                </button>
               </div>
             )}
           </div>
